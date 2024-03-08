@@ -64,7 +64,7 @@
                         <!-- Default configuration for running with: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>org.example.beatbox/org.example.beatbox.HelloApplication</mainClass>
+                            <mainClass>org.example.beatbox/org.nkon.beatbox.BeatBoxApplication</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
