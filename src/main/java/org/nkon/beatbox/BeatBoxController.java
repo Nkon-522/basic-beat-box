@@ -1,6 +1,7 @@
 package org.nkon.beatbox;
 
 import javafx.scene.control.CheckBox;
+import javafx.stage.FileChooser;
 
 import javax.sound.midi.*;
 import java.io.*;
@@ -9,10 +10,11 @@ import static javax.sound.midi.ShortMessage.*;
 
 public class BeatBoxController {
 
-    String path = "Checkbox.ser";
     private Sequencer sequencer;
     private Sequence sequence;
     private Track track;
+
+    FileChooser fileChooser = new FileChooser();
 
     int[] instruments = {35, 42, 46, 38, 49, 39, 50, 60, 70, 72, 64, 56, 58, 47, 67, 63};
 
@@ -52,6 +54,9 @@ public class BeatBoxController {
     }
 
     public void writeFile(CheckBox[][] checkBoxes) {
+        File file = fileChooser.showSaveDialog(null);
+        if (file == null) { return; }
+
         boolean [][] checkBoxState = new boolean[checkBoxes.length][checkBoxes[0].length];
         for (int i = 0; i < checkBoxes.length; i++) {
             for (int j = 0; j < checkBoxes[0].length; j++) {
@@ -62,7 +67,7 @@ public class BeatBoxController {
         }
 
         try (ObjectOutputStream os =
-                     new ObjectOutputStream(new FileOutputStream(path))
+                     new ObjectOutputStream(new FileOutputStream(file.getAbsolutePath()))
         ) {
             os.writeObject(checkBoxState);
         } catch (IOException e) {
@@ -71,9 +76,12 @@ public class BeatBoxController {
     }
 
     public void readFile(CheckBox[][] checkBoxes) {
+        File file = fileChooser.showOpenDialog(null);
+        if (file == null) { return; }
+
         boolean[][] checkboxState = null;
         try (ObjectInputStream is =
-                     new ObjectInputStream(new FileInputStream(path))
+                     new ObjectInputStream(new FileInputStream(file.getAbsolutePath()))
         ) {
             checkboxState = (boolean[][]) is.readObject();
         } catch (Exception e) {
@@ -133,5 +141,10 @@ public class BeatBoxController {
         } catch (MidiUnavailableException | InvalidMidiDataException e) {
             System.out.println(e.getCause().toString());
         }
+    }
+
+    public BeatBoxController() {
+        FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("Select a file (*.ser)", "*.ser");
+        fileChooser.getExtensionFilters().add(filter);
     }
 }
