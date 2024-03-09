@@ -3,11 +3,13 @@ package org.nkon.beatbox;
 import javafx.scene.control.CheckBox;
 
 import javax.sound.midi.*;
+import java.io.*;
 
 import static javax.sound.midi.ShortMessage.*;
-import static javax.sound.midi.ShortMessage.NOTE_OFF;
 
 public class BeatBoxController {
+
+    String path = "Checkbox.ser";
     private Sequencer sequencer;
     private Sequence sequence;
     private Track track;
@@ -47,6 +49,44 @@ public class BeatBoxController {
     public void changeTempo(float tempoMultiplier) {
         float tempoFactor = sequencer.getTempoFactor();
         sequencer.setTempoFactor(tempoFactor * tempoMultiplier);
+    }
+
+    public void writeFile(CheckBox[][] checkBoxes) {
+        boolean [][] checkBoxState = new boolean[checkBoxes.length][checkBoxes[0].length];
+        for (int i = 0; i < checkBoxes.length; i++) {
+            for (int j = 0; j < checkBoxes[0].length; j++) {
+                if (checkBoxes[i][j].isSelected()) {
+                    checkBoxState[i][j] = true;
+                }
+            }
+        }
+
+        try (ObjectOutputStream os =
+                     new ObjectOutputStream(new FileOutputStream(path))
+        ) {
+            os.writeObject(checkBoxState);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void readFile(CheckBox[][] checkBoxes) {
+        boolean[][] checkboxState = null;
+        try (ObjectInputStream is =
+                     new ObjectInputStream(new FileInputStream(path))
+        ) {
+            checkboxState = (boolean[][]) is.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (checkboxState == null) {return;}
+        for (int i = 0; i < checkBoxes.length; i++) {
+            for (int j = 0; j < checkBoxes[0].length; j++) {
+                checkBoxes[i][j].setSelected(checkboxState[i][j]);
+            }
+        }
+        sequencer.stop();
+        buildTrackAndStart(checkBoxes);
     }
 
     public void buildTrackAndStart(CheckBox[][] checkBoxes) {

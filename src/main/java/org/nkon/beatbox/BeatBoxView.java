@@ -11,7 +11,7 @@ public class BeatBoxView {
     BeatBoxController beatBoxController = new BeatBoxController();
 
     private final BorderPane borderPane = new BorderPane();
-    ;
+
     // Left
     String[] instrumentNames = {"Bass Drum", "Closed Hi-Hat",
             "Open Hi-Hat", "Acoustic Snare", "Crash Cymbal", "Hand Clap",
@@ -27,6 +27,8 @@ public class BeatBoxView {
     Button stopButton = new Button("Stop");
     Button tempoUpButton = new Button("Tempo Up");
     Button tempoDownButton = new Button("Tempo Down");
+    Button SerializeButton = new Button("Serialize");
+    Button RestoreButton = new Button("Restore");
 
     private void setUpButtons() {
         VBox buttonsVBox = new VBox();
@@ -34,11 +36,15 @@ public class BeatBoxView {
         buttonsVBox.getChildren().add(stopButton);
         buttonsVBox.getChildren().add(tempoUpButton);
         buttonsVBox.getChildren().add(tempoDownButton);
+        buttonsVBox.getChildren().add(SerializeButton);
+        buttonsVBox.getChildren().add(RestoreButton);
 
         startButton.setOnAction(e -> beatBoxController.buildTrackAndStart(checkBoxes));
         stopButton.setOnAction(e -> beatBoxController.stopSequencer());
         tempoUpButton.setOnAction(e -> beatBoxController.changeTempo(1.03f));
         tempoDownButton.setOnAction(e -> beatBoxController.changeTempo(0.97f));
+        SerializeButton.setOnAction(e -> beatBoxController.writeFile(checkBoxes));
+        RestoreButton.setOnAction(e -> beatBoxController.readFile(checkBoxes));
 
         borderPane.setRight(buttonsVBox);
     }
