@@ -120,16 +120,18 @@ public class BeatBoxController {
         buildTrackAndStart(checkBoxes);
     }
 
-    public void sendMessage(TextArea userMessage, CheckBox[][] checkBoxes) {
+    public boolean sendMessage(TextArea userMessage, CheckBox[][] checkBoxes) {
         boolean[][] checkBoxState = setCheckBoxState(checkBoxes);
+        boolean sent = false;
         try {
             objectOutputStream.writeObject(userName + nextNum++ + ": " + userMessage.getText() );
             objectOutputStream.writeObject(checkBoxState);
+            sent = true;
         } catch (IOException e) {
             System.out.println("Terribly sorry. Could not send it to the server.");
-            e.printStackTrace();
         }
         userMessage.setText("");
+        return sent;
     }
 
     public void buildTrackAndStart(CheckBox[][] checkBoxes) {
@@ -222,21 +224,23 @@ public class BeatBoxController {
             }
         }
     }
-    public void setUpConnection() {
+    public boolean setUpConnection() {
         try {
             socket = new Socket("127.0.0.1", 4242);
             objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             objectInputStream = new ObjectInputStream(socket.getInputStream());
 
-            userName = "User#"+(int) objectInputStream.readObject()+"|";
+            userName = "User#"+ objectInputStream.readObject()+"|";
 
             executorService = Executors.newSingleThreadExecutor();
             executorService.submit(new RemoteReader());
+            return true;
         } catch (IOException e) {
             System.out.println("Couldn't connect to the server!");
         } catch (ClassNotFoundException e) {
             System.out.println("Couldn't receive id number!");
         }
+        return false;
     }
 
     public void closeConnection() {

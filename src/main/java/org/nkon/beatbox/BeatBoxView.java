@@ -11,6 +11,7 @@ public class BeatBoxView {
     private final BorderPane borderPane = new BorderPane();
 
     // Left
+    boolean isConnected;
     String[] instrumentNames = {"Bass Drum", "Closed Hi-Hat",
             "Open Hi-Hat", "Acoustic Snare", "Crash Cymbal", "Hand Clap",
             "High Tom", "Hi Bongo", "Maracas", "Whistle", "Low Conga",
@@ -32,6 +33,10 @@ public class BeatBoxView {
     private final TextArea textArea = new TextArea();
     private final ListView<String> listView = new ListView<>();
 
+    private void handleConnection() {
+        connectButton.setDisable(isConnected);
+    }
+
     private void setUpButtons() {
         VBox buttonsVBox = new VBox();
 
@@ -46,14 +51,16 @@ public class BeatBoxView {
         buttonsVBox.getChildren().add(textArea);
         buttonsVBox.getChildren().add(listView);
 
-        connectButton.setOnAction(e -> beatBoxController.setUpConnection());
+        connectButton.setOnAction(e -> {isConnected = beatBoxController.setUpConnection(); handleConnection();});
         startButton.setOnAction(e -> beatBoxController.buildTrackAndStart(checkBoxes));
         stopButton.setOnAction(e -> beatBoxController.stopSequencer());
         tempoUpButton.setOnAction(e -> beatBoxController.changeTempo(1.03f));
         tempoDownButton.setOnAction(e -> beatBoxController.changeTempo(0.97f));
         serializeButton.setOnAction(e -> beatBoxController.writeFile(checkBoxes));
         restoreButton.setOnAction(e -> beatBoxController.readFile(checkBoxes));
-        sendButton.setOnAction(e -> beatBoxController.sendMessage(textArea, checkBoxes));
+        sendButton.setOnAction(e -> {isConnected = beatBoxController.sendMessage(textArea, checkBoxes); handleConnection();});
+
+        handleConnection();
 
         textArea.setWrapText(true);
 
@@ -63,6 +70,8 @@ public class BeatBoxView {
         listView.getSelectionModel().selectedItemProperty().addListener(
                 (ov, old_val, new_val) -> beatBoxController.loadTrack(new_val, checkBoxes)
         );
+
+
 
         borderPane.setRight(buttonsVBox);
     }
@@ -90,7 +99,7 @@ public class BeatBoxView {
     }
 
     BeatBoxView() {
-        beatBoxController.setUpConnection();
+        isConnected = beatBoxController.setUpConnection();
         setUpInstruments();
         setUpCheckBoxes();
         setUpButtons();
