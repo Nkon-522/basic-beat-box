@@ -1,11 +1,17 @@
 package org.nkon.beatbox;
 
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 public class BeatBoxView {
+    private final double verticalSpacing = 30;
+    @SuppressWarnings("FieldCanBeLocal")
+    private final double horizontalSpacing = 15;
+
+    private final double padding = 10;
     BeatBoxController beatBoxController = new BeatBoxController();
 
     private final BorderPane borderPane = new BorderPane();
@@ -35,10 +41,13 @@ public class BeatBoxView {
 
     private void handleConnection() {
         connectButton.setDisable(isConnected);
+        sendButton.setDisable(!isConnected);
     }
 
     private void setUpButtons() {
         VBox buttonsVBox = new VBox();
+        buttonsVBox.setSpacing(verticalSpacing-10);
+        buttonsVBox.setPadding(new Insets(padding));
 
         buttonsVBox.getChildren().add(connectButton);
         buttonsVBox.getChildren().add(startButton);
@@ -63,23 +72,27 @@ public class BeatBoxView {
         handleConnection();
 
         textArea.setWrapText(true);
+        textArea.setPrefHeight(80);
 
         listView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        listView.setPrefHeight(150);
 
         beatBoxController.setListView(listView);
         listView.getSelectionModel().selectedItemProperty().addListener(
                 (ov, old_val, new_val) -> beatBoxController.loadTrack(new_val, checkBoxes)
         );
 
-
-
         borderPane.setRight(buttonsVBox);
     }
 
     private void setUpCheckBoxes() {
         VBox checkBoxesVBox = new VBox();
+        checkBoxesVBox.setSpacing(verticalSpacing);
+        checkBoxesVBox.setPadding(new Insets(padding));
+
         for (int i = 0; i < number_rows; i++) {
             HBox checkBoxRow = new HBox();
+            checkBoxRow.setSpacing(horizontalSpacing);
             for (int j = 0; j < number_columns; j++) {
                 checkBoxes[i][j] = new CheckBox();
                 checkBoxRow.getChildren().add(checkBoxes[i][j]);
@@ -91,6 +104,9 @@ public class BeatBoxView {
 
     private void setUpInstruments() {
         VBox instrumentsLabelsVBox = new VBox();
+        instrumentsLabelsVBox.setSpacing(verticalSpacing);
+        instrumentsLabelsVBox.setPadding(new Insets(padding));
+
         for (String instrumentName : instrumentNames) {
             Label instrumentLabel = new Label(instrumentName);
             instrumentsLabelsVBox.getChildren().add(instrumentLabel);
