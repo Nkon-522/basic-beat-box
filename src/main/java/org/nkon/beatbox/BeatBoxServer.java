@@ -15,6 +15,7 @@ public class BeatBoxServer {
     final List<ClientHandler> clientHandlerList = new ArrayList<>();
     int userId;
     private void init() {
+        Runtime.getRuntime().addShutdownHook(new Thread(this::closeServerSocket));
         try {
             serverSocket = new ServerSocket(4242);
             ExecutorService threadPool = Executors.newCachedThreadPool();
@@ -33,13 +34,16 @@ public class BeatBoxServer {
         } catch (IOException e) {
             closeServerSocket();
         }
+
     }
 
     private void closeServerSocket() {
+        System.out.println("Shutdown!");
         try {
             if (serverSocket != null) {
                 serverSocket.close();
             }
+            Runtime.getRuntime().halt(0);
         } catch (IOException e) {
             e.printStackTrace();
         }
