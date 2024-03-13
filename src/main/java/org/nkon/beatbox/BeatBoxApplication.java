@@ -2,7 +2,6 @@ package org.nkon.beatbox;
 
 import javafx.application.Application;
 import javafx.scene.Group;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -17,8 +16,8 @@ public class BeatBoxApplication extends Application {
     @Override
     public void start(Stage stage) {
 
-        Parent parent = new Group();
-        ((Group) parent).getChildren().add(beatBoxView.getBorderPane());
+        Group parent = new Group();
+        parent.getChildren().add(beatBoxView.getBorderPane());
         Scene scene = new Scene(parent);
 
         stage.setTitle("BeatBox!");

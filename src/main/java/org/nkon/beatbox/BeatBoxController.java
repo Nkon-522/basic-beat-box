@@ -1,22 +1,40 @@
 package org.nkon.beatbox;
 
+import javafx.application.Platform;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.stage.FileChooser;
 
 import javax.sound.midi.*;
 import java.io.*;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static javax.sound.midi.ShortMessage.*;
 
 public class BeatBoxController {
 
+    Socket socket;
+    ExecutorService executorService;
+
     private Sequencer sequencer;
     private Sequence sequence;
     private Track track;
 
+
     FileChooser fileChooser = new FileChooser();
 
     int[] instruments = {35, 42, 46, 38, 49, 39, 50, 60, 70, 72, 64, 56, 58, 47, 67, 63};
+
+    private String userName;
+    private int nextNum;
+    private ObjectOutputStream objectOutputStream;
+    private ObjectInputStream objectInputStream;
+    private final HashMap<String, boolean[][]> otherSeqsMap = new HashMap<>();
+    private ListView<String> listView;
 
     public void closeSequencer() {
         sequencer.close();
@@ -53,10 +71,7 @@ public class BeatBoxController {
         sequencer.setTempoFactor(tempoFactor * tempoMultiplier);
     }
 
-    public void writeFile(CheckBox[][] checkBoxes) {
-        File file = fileChooser.showSaveDialog(null);
-        if (file == null) { return; }
-
+    private boolean [][] setCheckBoxState(CheckBox[][] checkBoxes) {
         boolean [][] checkBoxState = new boolean[checkBoxes.length][checkBoxes[0].length];
         for (int i = 0; i < checkBoxes.length; i++) {
             for (int j = 0; j < checkBoxes[0].length; j++) {
@@ -65,6 +80,14 @@ public class BeatBoxController {
                 }
             }
         }
+        return checkBoxState;
+    }
+
+    public void writeFile(CheckBox[][] checkBoxes) {
+        File file = fileChooser.showSaveDialog(null);
+        if (file == null) { return; }
+
+        boolean [][] checkBoxState = setCheckBoxState(checkBoxes);
 
         try (ObjectOutputStream os =
                      new ObjectOutputStream(new FileOutputStream(file.getAbsolutePath()))
@@ -95,6 +118,18 @@ public class BeatBoxController {
         }
         sequencer.stop();
         buildTrackAndStart(checkBoxes);
+    }
+
+    public void sendMessage(TextArea userMessage, CheckBox[][] checkBoxes) {
+        boolean[][] checkBoxState = setCheckBoxState(checkBoxes);
+        try {
+            objectOutputStream.writeObject(userName + nextNum++ + ": " + userMessage.getText() );
+            objectOutputStream.writeObject(checkBoxState);
+        } catch (IOException e) {
+            System.out.println("Terribly sorry. Could not send it to the server.");
+            e.printStackTrace();
+        }
+        userMessage.setText("");
     }
 
     public void buildTrackAndStart(CheckBox[][] checkBoxes) {
@@ -147,4 +182,72 @@ public class BeatBoxController {
         FileChooser.ExtensionFilter filter = new FileChooser.ExtensionFilter("Select a file (*.ser)", "*.ser");
         fileChooser.getExtensionFilters().add(filter);
     }
+
+    private void changeSequence(boolean[][] checkboxState, CheckBox[][] checkBoxes) {
+        for (int i = 0; i < checkBoxes.length; i++) {
+            for (int j = 0; j < checkBoxes[0].length; j++) {
+                checkBoxes[i][j].setSelected(checkboxState[i][j]);
+            }
+        }
+    }
+
+    public void loadTrack(String selectedValue, CheckBox[][] checkBoxes) {
+        boolean[][] selectedState = otherSeqsMap.get(selectedValue);
+        changeSequence(selectedState, checkBoxes);
+        sequencer.stop();
+        buildTrackAndStart(checkBoxes);
+    }
+
+    public void setListView(ListView<String> listView) {
+        this.listView = listView;
+    }
+
+    private class RemoteReader implements Runnable {
+        @Override
+        public void run() {
+            try {
+                Object object;
+                while ( (object = objectInputStream.readObject()) != null ) {
+                    System.out.println("got an object from server!");
+                    System.out.println(object.getClass());
+
+                    String nameToShow = (String) object;
+                    boolean[][] checkBoxState = (boolean[][]) objectInputStream.readObject();
+                    otherSeqsMap.put(nameToShow, checkBoxState);
+
+                    Platform.runLater(()-> listView.getItems().add(nameToShow));
+                }
+            } catch (IOException | ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    public void setUpConnection() {
+        try {
+            socket = new Socket("127.0.0.1", 4242);
+            objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+            objectInputStream = new ObjectInputStream(socket.getInputStream());
+
+            userName = "User#"+(int) objectInputStream.readObject()+"|";
+
+            executorService = Executors.newSingleThreadExecutor();
+            executorService.submit(new RemoteReader());
+        } catch (IOException e) {
+            System.out.println("Couldn't connect to the server!");
+        } catch (ClassNotFoundException e) {
+            System.out.println("Couldn't receive id number!");
+        }
+    }
+
+    public void closeConnection() {
+        if (socket != null && socket.isConnected()) {
+            try {
+                socket.close();
+                executorService.shutdown();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 }

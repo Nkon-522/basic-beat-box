@@ -1,8 +1,6 @@
 package org.nkon.beatbox;
 
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -23,28 +21,48 @@ public class BeatBoxView {
     private final int number_columns = 16;
     private final CheckBox[][] checkBoxes = new CheckBox[number_rows][number_columns];
     // Right
-    Button startButton = new Button("Start");
-    Button stopButton = new Button("Stop");
-    Button tempoUpButton = new Button("Tempo Up");
-    Button tempoDownButton = new Button("Tempo Down");
-    Button SerializeButton = new Button("Serialize");
-    Button RestoreButton = new Button("Restore");
+    private final Button connectButton = new Button("Connect");
+    private final Button startButton = new Button("Start");
+    private final Button stopButton = new Button("Stop");
+    private final Button tempoUpButton = new Button("Tempo Up");
+    private final Button tempoDownButton = new Button("Tempo Down");
+    private final Button serializeButton = new Button("Serialize");
+    private final Button restoreButton = new Button("Restore");
+    private final Button sendButton = new Button("Send");
+    private final TextArea textArea = new TextArea();
+    private final ListView<String> listView = new ListView<>();
 
     private void setUpButtons() {
         VBox buttonsVBox = new VBox();
+
+        buttonsVBox.getChildren().add(connectButton);
         buttonsVBox.getChildren().add(startButton);
         buttonsVBox.getChildren().add(stopButton);
         buttonsVBox.getChildren().add(tempoUpButton);
         buttonsVBox.getChildren().add(tempoDownButton);
-        buttonsVBox.getChildren().add(SerializeButton);
-        buttonsVBox.getChildren().add(RestoreButton);
+        buttonsVBox.getChildren().add(serializeButton);
+        buttonsVBox.getChildren().add(restoreButton);
+        buttonsVBox.getChildren().add(sendButton);
+        buttonsVBox.getChildren().add(textArea);
+        buttonsVBox.getChildren().add(listView);
 
+        connectButton.setOnAction(e -> beatBoxController.setUpConnection());
         startButton.setOnAction(e -> beatBoxController.buildTrackAndStart(checkBoxes));
         stopButton.setOnAction(e -> beatBoxController.stopSequencer());
         tempoUpButton.setOnAction(e -> beatBoxController.changeTempo(1.03f));
         tempoDownButton.setOnAction(e -> beatBoxController.changeTempo(0.97f));
-        SerializeButton.setOnAction(e -> beatBoxController.writeFile(checkBoxes));
-        RestoreButton.setOnAction(e -> beatBoxController.readFile(checkBoxes));
+        serializeButton.setOnAction(e -> beatBoxController.writeFile(checkBoxes));
+        restoreButton.setOnAction(e -> beatBoxController.readFile(checkBoxes));
+        sendButton.setOnAction(e -> beatBoxController.sendMessage(textArea, checkBoxes));
+
+        textArea.setWrapText(true);
+
+        listView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+
+        beatBoxController.setListView(listView);
+        listView.getSelectionModel().selectedItemProperty().addListener(
+                (ov, old_val, new_val) -> beatBoxController.loadTrack(new_val, checkBoxes)
+        );
 
         borderPane.setRight(buttonsVBox);
     }
@@ -72,6 +90,7 @@ public class BeatBoxView {
     }
 
     BeatBoxView() {
+        beatBoxController.setUpConnection();
         setUpInstruments();
         setUpCheckBoxes();
         setUpButtons();
@@ -80,6 +99,7 @@ public class BeatBoxView {
 
     public void close() {
         beatBoxController.closeSequencer();
+        beatBoxController.closeConnection();
     }
 
     public BorderPane getBorderPane() {
